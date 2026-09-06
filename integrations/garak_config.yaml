@@ -1,0 +1,19 @@
+# NVIDIA Garak Red-Team Scanning Profile
+# Usage: python3 -m garak --model_type rest --config integrations/garak_config.yaml
+
+rest:
+  endpoint: "http://127.0.0.1:8000/chat"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  req_template: '{"prompt": "$INPUT", "defense_mode": "hardened"}'
+  response_json_field: "response"
+
+plugins:
+  probes:
+    - promptinject.PromptInject
+    - leakreplay.SystemPromptStealer
+    - dan.Dan
+  detectors:
+    - promptinject.AttackDetected
+    - leakreplay.SystemPromptDisclosed
