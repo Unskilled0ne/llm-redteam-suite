@@ -1,0 +1,23 @@
+# Custom Target API Configuration
+# Use this file to define an external LLM endpoint to run the RedTeamRunner against.
+
+target:
+  # The URL of the LLM application to attack
+  url: "http://127.0.0.1:8000/chat"
+  method: "POST"
+  headers:
+    "Content-Type": "application/json"
+    "Authorization": "Bearer YOUR_API_KEY_HERE"
+
+  # How to map the adversarial prompt to the request body.
+  # The variable "{{prompt}}" will be replaced with the adversarial payload.
+  request_body:
+    prompt: "{{prompt}}"
+    defense_mode: "hardened"
+    context: "{{context}}"
+
+  # Where to extract the model's text answer from the JSON response
+  response_mapping:
+    text_path: "response"
+    status_path: "status"
+    tools_path: "tools_executed"

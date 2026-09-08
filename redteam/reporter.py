@@ -70,9 +70,62 @@ class BenchmarkReporter:
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(md)
 
-        # Also write JSON summary
+        # Write JSON summary
         json_path = os.path.join(self.output_dir, "benchmark_results.json")
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump({"unprotected": unprotected, "hardened": hardened, "timestamp": now}, f, indent=2)
 
+        # Write SARIF output
+        self.generate_sarif_report(hardened)
+
         return file_path
+
+    def generate_sarif_report(self, hardened: Dict[str, Any]):
+        """Generates a GitHub-compatible SARIF output mapping findings to MITRE ATLAS."""
+        runs = []
+        results = []
+        
+        # MITRE ATLAS mappings
+        atlas_map = {
+            "LLM01_PROMPT_INJECTION": "AML.T0051",
+            "LLM_PROMPT_INJECTION": "AML.T0051",
+            "LLM07_SYSTEM_PROMPT_LEAKAGE": "AML.T0054",
+            "LLM04_MODEL_DOS": "AML.T0029",
+            "INDIRECT_PROMPT_INJECTION": "AML.T0053",
+            "LLM08_VECTOR_RAG_POISONING": "AML.T0053"
+        }
+
+        for r in hardened.get("results", []):
+            if r["verdict"] == "VULNERABLE":
+                mitre_id = atlas_map.get(r["category"], "AML.T0000")
+                results.append({
+                    "ruleId": f"{r['category']} ({mitre_id})",
+                    "level": "error" if r["severity"] == "CRITICAL" else "warning",
+                    "message": {
+                        "text": f"Vulnerability detected: {r['name']}. {r['reason']}"
+                    },
+                    "locations": [{
+                        "physicalLocation": {
+                            "artifactLocation": {"uri": "target_app/app.py"},
+                            "region": {"startLine": 1}
+                        }
+                    }]
+                })
+
+        sarif = {
+            "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+            "version": "2.1.0",
+            "runs": [{
+                "tool": {
+                    "driver": {
+                        "name": "FinCorp AI Red-Teaming Engine",
+                        "version": "1.0"
+                    }
+                },
+                "results": results
+            }]
+        }
+
+        sarif_path = os.path.join(self.output_dir, "benchmark_report.sarif")
+        with open(sarif_path, "w", encoding="utf-8") as f:
+            json.dump(sarif, f, indent=2)

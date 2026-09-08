@@ -23,3 +23,9 @@ reporting:
   output_dir: "reports"
   generate_html: true
   generate_markdown: true
+
+deployment:
+  environment: "production"
+  default_defense_mode: "hardened"
+  allow_insecure_mode: false
+  provider: "simulation" # simulation, openai, gemini, ollama

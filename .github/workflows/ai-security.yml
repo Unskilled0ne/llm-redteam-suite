@@ -1,0 +1,57 @@
+name: AI Security CI/CD & Red-Team Gate
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  ai-redteam-eval:
+    runs-on: ubuntu-latest
+    name: OWASP LLM Red-Teaming & Guardrail Assurance
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Execute Guardrail Unit & Integration Tests
+        run: |
+          python -m unittest discover -s tests -v
+
+      - name: Execute End-to-End OWASP Red-Teaming Benchmark
+        run: |
+          python run_benchmark.py
+
+      - name: Enforce Security Policy Gate (Zero Bypass Verification)
+        run: |
+          python -c "
+          import json, sys
+          with open('reports/benchmark_results.json', 'r') as f:
+              data = json.load(f)
+          hardened_asr = data['hardened']['summary']['attack_success_rate_percent']
+          print(f'Hardened Defense Layer ASR: {hardened_asr}%')
+          if hardened_asr > 0.0:
+              print('❌ CRITICAL: Security gate failed! Adversarial bypasses detected in hardened layer.')
+              sys.exit(1)
+          print('✅ SUCCESS: 100% of adversarial probes neutralized. Zero vulnerabilities detected.')
+          "
+
+      - name: Archive Benchmark Deliverables
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-llm-security-report
+          path: |
+            reports/benchmark_report.md
+            reports/benchmark_results.json

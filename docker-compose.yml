@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  fincorp-ai-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fincorp-ai-assistant
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=production
+      - DEFAULT_DEFENSE_MODE=hardened
+      - ALLOW_INSECURE_MODE=false
+      - CANARY_TOKEN=CANARY_TOKEN_99814_CONFIDENTIAL
+      - LLM_PROVIDER=simulation
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
