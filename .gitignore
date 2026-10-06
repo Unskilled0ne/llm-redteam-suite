@@ -5,3 +5,10 @@ __pycache__/
 .env
 *.log
 logs/
+
+# Secrets
+*.key
+*.pub
+*.pem
+.env
+
