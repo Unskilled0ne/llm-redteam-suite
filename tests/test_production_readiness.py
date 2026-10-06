@@ -34,7 +34,7 @@ class TestProductionReadiness(unittest.TestCase):
         self.assertIn("Critical Leak", reason)
 
         # Google API key
-        text_with_google_key = "API key: REDACTED_API_KEY_00000000000000000"
+        text_with_google_key = "API key: AIzaSyDFOUNDATION_DUMMY_KEY_00000000000"
         safe, reason, sanitized = OutputGuardrail.inspect(text_with_google_key)
         self.assertFalse(safe)
         self.assertIn("Google API key", reason)
