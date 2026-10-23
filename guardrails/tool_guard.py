@@ -14,9 +14,13 @@ class ToolGuardrail:
         """
         Enforces Role-Based Access Control (RBAC) and least privilege on LLM agent tools.
         """
+        if not isinstance(args, dict):
+            args = {}
+        role = (caller_role or "customer").lower().strip()
+
         # 1. Role-Based Access Control
         if tool_name in RESTRICTED_ADMIN_TOOLS:
-            if caller_role != "admin":
+            if role != "admin":
                 return False, f"Unauthorized Tool Invocation: '{tool_name}' requires privileged role 'admin'. Caller has role '{caller_role}'."
 
         # 2. Tool Parameter Validation: issue_refund
@@ -27,15 +31,17 @@ class ToolGuardrail:
             except (ValueError, TypeError):
                 return False, "Policy Violation: Invalid refund amount format."
 
-            if amount_val > 100.0 and caller_role not in ["admin", "manager"]:
+            if amount_val <= 0:
+                return False, "Policy Violation: Refund amount must be strictly greater than $0.00."
+
+            if amount_val > 100.0 and role not in ["admin", "manager"]:
                 return False, f"Policy Violation: Refund amount ${amount_val} exceeds unmanaged limit ($100)."
 
         # 3. Tool Parameter Validation: execute_sql (SQL Injection & DDL Prevention)
         if tool_name == "execute_sql":
             query = str(args.get("query", ""))
             if DESTRUCTIVE_SQL_PATTERN.search(query):
-                if not args.get("allow_destructive_ddl", False):
-                    return False, "Policy Violation: Destructive DDL statement blocked by tool security policy."
+                return False, "Policy Violation: Destructive DDL statement blocked by tool security policy."
 
         # 4. Unknown tool check
         if tool_name not in ALLOWED_PUBLIC_TOOLS and tool_name not in RESTRICTED_ADMIN_TOOLS and tool_name != "issue_refund":

@@ -52,12 +52,16 @@ class SOARBridge:
 
         # 2. Forward to Aegis-SOAR Webhook endpoint if available
         try:
+            import re
+            extracted_urls = re.findall(r"https?://[^\s)\]\">]+", user_prompt)
             soar_alert = {
                 "playbook": "bruteforce_containment" if "AGENCY" in category else "phishing_triage",
                 "attacker_ip": client_ip,
                 "service": f"FinCorp LLM Gateway ({category})",
                 "attempt_count": 1,
-                "extracted_urls": ["https://attacker-c2.com"] if "SSRF" in category else []
+                "extracted_urls": extracted_urls,
+                "recipient_email": f"{caller_role}@apexfin.corp",
+                "sender_email": f"attacker@{client_ip}.inbound"
             }
             resp = requests.post(SOAR_WEBHOOK_URL, json=soar_alert, timeout=1.0)
             if resp.status_code in [200, 201]:
