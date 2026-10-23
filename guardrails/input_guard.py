@@ -9,31 +9,26 @@ from guardrails.ai_guard import AIGuardrail
 ai_guard = AIGuardrail()
 
 INJECTION_PATTERNS = [
-    # Instruction disregard & override
     r"(?i)ignore\s+(all\s+)?(previous\s+|prior\s+|above\s+|preceding\s+|existing\s+)?(instructions|prompts|rules|directives|commands)",
     r"(?i)system\s+override",
     r"(?i)disregard\s+(all\s+)?(the\s+)?(guardrails|guidelines|policies|constraints|instructions|rules)",
     r"(?i)forget\s+(all\s+)?(previous|prior|above)\s+(instructions|rules|conversations)",
     
-    # Jailbreaks & personas
     r"(?i)you\s+are\s+now\s+(in\s+)?developer\s+mode",
     r"(?i)dan\s+mode|jailbreak|unrestricted\s+mode|do\s+anything\s+now|developer\s+mode",
     r"(?i)aim\s+persona|evil\s+confidant|bypass\s+all\s+(filters|safety|guardrails)",
     r"(?i)hypothetical\s+(scenario|mode)\s+where\s+(you\s+have\s+no|there\s+are\s+no)\s+(rules|ethics|limits)",
     
-    # Prompt & system leakage extraction
     r"(?i)reveal\s+(your\s+)?(system\s+prompt|instructions|initial\s+prompt|hidden\s+rules)",
     r"(?i)repeat\s+(everything|the\s+words|the\s+text|all\s+text)\s+(above|before|from\s+the\s+beginning)",
     r"(?i)(print|output|display|show)\s+(your\s+)?(initial|system|original|base)\s+(prompt|instructions)",
     r"(?i)what\s+(is|are)\s+your\s+(exact\s+)?(system\s+prompt|initial\s+instructions|system\s+rules)",
     
-    # Tag breakout & delimiter escaping
     r"(?i)<\/?system>",
     r"(?i)<\/?user_input>",
     r"(?i)<\/?instruction>",
     r"(?i)```\s*(system|admin|root|secret)",
     
-    # Obfuscation & token smuggling
     r"(?i)base64\s+decode|rot13|hex\s+decode"
 ]
 
@@ -53,11 +48,8 @@ class InputGuardrail:
         """
         if not text:
             return ""
-        # Remove zero-width spaces and invisible formatting characters
         cleaned = re.sub(r"[\u200B-\u200D\uFEFF\u00AD\u2060\u200E\u200F]", "", text)
-        # Unicode NFKC normalization
         cleaned = unicodedata.normalize("NFKC", cleaned)
-        # Defeat confusable homoglyph bypasses
         cleaned = cleaned.translate(InputGuardrail.HOMOGLYPH_MAP)
         return cleaned
 
@@ -72,13 +64,11 @@ class InputGuardrail:
 
         normalized = InputGuardrail.normalize_text(user_input)
 
-        # 1. Inspect normalized plain text against compiled adversarial signatures
         for pattern in COMPILED_PATTERNS:
             match = pattern.search(normalized)
             if match:
                 return False, f"Adversarial signature detected: '{match.group(0)}'"
 
-        # 2. Inspect embedded Base64 chunks for smuggled adversarial payloads
         b64_matches = BASE64_CHUNK_REGEX.findall(normalized)
         for chunk in b64_matches:
             try:
@@ -92,12 +82,10 @@ class InputGuardrail:
             except Exception:
                 continue
 
-        # 3. Layer 2: Adversarial Token Suffix & Entropy Anomaly Inspection
         has_suffix_anomaly, suffix_reason = InputGuardrail.detect_adversarial_suffix(normalized)
         if has_suffix_anomaly:
             return False, suffix_reason
 
-        # 4. Layer 3: Semantic AI Guardrail Inspection (LLM-as-a-Judge)
         is_safe_ai, ai_reason = ai_guard.inspect(normalized)
         if not is_safe_ai:
             return False, ai_reason
@@ -122,7 +110,6 @@ class InputGuardrail:
         if not text or len(text) < 20:
             return False, None
         
-        # Detect consecutive punctuation sequences typical of GCG suffixes (e.g. ! ! ! := : ~)
         symbol_run = re.search(r"([!@#$%^&*()_+=\[\]{};:\"\\|,.<>/?`~-]\s*){7,}", text)
         if symbol_run:
             snippet = symbol_run.group(0).strip()
@@ -138,7 +125,6 @@ class InputGuardrail:
         Neutralizes boundary breakout attempts and encloses input in structural boundary tags.
         """
         cleaned = InputGuardrail.normalize_text(user_input)
-        # Sanitize internal delimiter occurrences to prevent escaping the sandboxed XML container
         cleaned = cleaned.replace("<user_input>", "&lt;user_input&gt;").replace("</user_input>", "&lt;/user_input&gt;")
         cleaned = cleaned.replace("<system>", "&lt;system&gt;").replace("</system>", "&lt;/system&gt;")
         return f"<user_input>\n{cleaned.strip()}\n</user_input>"

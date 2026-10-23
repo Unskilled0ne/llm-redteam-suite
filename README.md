@@ -85,7 +85,7 @@ Running the automated benchmark against the target yields immediate measurable r
 ### 1. Installation
 
 ```bash
-git clone https://github.com/your-username/llm-redteam-suite.git
+git clone https://github.com/Unskilled0ne/llm-redteam-suite.git
 cd llm-redteam-suite
 
 python3 -m venv venv
@@ -127,7 +127,7 @@ Get running locally in less than 2 minutes to test prompts and explore the guard
 
 ```bash
 # 1. Clone and enter the repository
-git clone https://github.com/your-username/llm-redteam-suite.git
+git clone https://github.com/Unskilled0ne/llm-redteam-suite.git
 cd llm-redteam-suite
 
 # 2. Set up virtual environment and install dependencies

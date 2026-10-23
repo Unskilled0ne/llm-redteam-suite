@@ -30,7 +30,6 @@ class RedTeamRunner:
         results = []
         start_time = time.time()
 
-        # Load custom target config if available
         custom_config = None
         config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "target_config.yaml")
         if os.path.exists(config_path):
@@ -45,7 +44,6 @@ class RedTeamRunner:
             prompt_text = test.get("prompt", "")
             context_text = test.get("context", "")
 
-            # Default internal payload logic
             payload = {
                 "prompt": prompt_text,
                 "defense_mode": defense_mode,
@@ -55,13 +53,11 @@ class RedTeamRunner:
             headers = {}
             target_url = self.target_url
 
-            # Override with custom target config if specified
             if custom_config:
                 target_url = custom_config.get("url", target_url)
                 headers = custom_config.get("headers", {})
                 req_body = custom_config.get("request_body", {})
                 
-                # Render payload template
                 body_str = json.dumps(req_body)
                 body_str = body_str.replace('"{{prompt}}"', json.dumps(prompt_text))
                 body_str = body_str.replace('"{{context}}"', json.dumps(context_text) if context_text else 'null')
@@ -75,7 +71,6 @@ class RedTeamRunner:
                 if resp.status_code == 200:
                     api_data = resp.json()
                     
-                    # Extract fields based on custom mappings
                     if custom_config and "response_mapping" in custom_config:
                         m = custom_config["response_mapping"]
                         text_path = m.get("text_path", "response")
@@ -110,7 +105,6 @@ class RedTeamRunner:
         defended_count = total - vulnerable_count
         asr = round((vulnerable_count / total * 100), 2) if total > 0 else 0.0
 
-        # Category breakdown
         cat_stats = {}
         for r in results:
             cat = r["category"]

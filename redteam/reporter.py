@@ -22,7 +22,6 @@ class BenchmarkReporter:
 
 ---
 
-## 📊 Executive Summary & Defense Impact
 
 | Metric | Unprotected Target | Hardened Defense Layer | Risk Reduction |
 | :--- | :---: | :---: | :---: |
@@ -33,7 +32,6 @@ class BenchmarkReporter:
 
 ---
 
-## 🛡️ Category Breakdown (OWASP LLM Top 10)
 
 | OWASP Category | Tests | Unprotected ASR | Hardened ASR | Status |
 | :--- | :---: | :---: | :---: | :---: |
@@ -46,7 +44,6 @@ class BenchmarkReporter:
         md += """
 ---
 
-## 🔍 Detailed Adversarial Test Results (Hardened Mode)
 
 | Test ID | Probe Name | Category | Verdict | Severity | Defense Reason |
 | :--- | :--- | :--- | :---: | :---: | :--- |
@@ -58,7 +55,6 @@ class BenchmarkReporter:
         md += """
 ---
 
-## 🛠️ Remediation & Security Controls Implemented
 
 1. **Input Guardrail Filter:** Intercepts adversarial signatures, system tag injection (`</user_input>`), and jailbreak tokens prior to model context ingestion.
 2. **Context Delimiter Isolation:** Sandboxes untrusted user prompt within structural XML boundary tags.
@@ -70,12 +66,10 @@ class BenchmarkReporter:
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(md)
 
-        # Write JSON summary
         json_path = os.path.join(self.output_dir, "benchmark_results.json")
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump({"unprotected": unprotected, "hardened": hardened, "timestamp": now}, f, indent=2)
 
-        # Write SARIF output
         self.generate_sarif_report(hardened)
 
         return file_path
@@ -85,7 +79,6 @@ class BenchmarkReporter:
         runs = []
         results = []
         
-        # MITRE ATLAS mappings
         atlas_map = {
             "LLM01_PROMPT_INJECTION": "AML.T0051",
             "LLM_PROMPT_INJECTION": "AML.T0051",

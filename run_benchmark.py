@@ -20,7 +20,7 @@ def start_server_in_thread(host: str = "127.0.0.1", port: int = 8000):
     server = uvicorn.Server(config)
     t = threading.Thread(target=server.run, daemon=True)
     t.start()
-    time.sleep(1.5)  # Wait for server to bind
+    time.sleep(1.5)
     return server
 
 def print_rich_summary(unprotected: dict, hardened: dict, report_path: str):
@@ -51,7 +51,6 @@ def print_rich_summary(unprotected: dict, hardened: dict, report_path: str):
     )
     console.print(table)
 
-    # Category breakdown table
     cat_table = Table(title="OWASP Category Breakdown", border_style="dim")
     cat_table.add_column("Category", style="bold white")
     cat_table.add_column("Tests", justify="center")
@@ -79,7 +78,6 @@ def main():
         uvicorn.run(app, host="0.0.0.0", port=args.port)
         return
 
-    # Start target app in background thread
     console.print("[dim]Starting local target agent...[/dim]")
     server = start_server_in_thread(port=args.port)
 

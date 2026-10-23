@@ -29,7 +29,6 @@ app = FastAPI(
 
 llm_engine = LLMEngine()
 
-# Metrics counters
 METRICS = {
     "total_requests": 0,
     "blocked_requests": 0,
@@ -79,21 +78,17 @@ async def chat(request: ChatRequest):
     context = request.context
     caller_role = request.caller_role
 
-    # Default to 'hardened' unless explicitly requested and permitted
     requested_mode = (request.defense_mode or DEFAULT_DEFENSE_MODE).lower()
 
     if requested_mode == "none":
         if APP_ENV == "production" and not ALLOW_INSECURE_MODE:
-            # Enforce hardened mode in production when insecure mode is disabled
             mode = "hardened"
         else:
             mode = "none"
     else:
         mode = "hardened"
 
-    # Hardened Defense Mode
     if mode == "hardened":
-        # 1. Input Guardrail Inspection
         is_safe_input, reason = InputGuardrail.inspect(user_prompt)
         if not is_safe_input:
             METRICS["blocked_requests"] += 1
@@ -133,10 +128,8 @@ async def chat(request: ChatRequest):
                     tools_executed=[]
                 )
 
-        # 2. Input Isolation & Sanitization
         guarded_prompt = InputGuardrail.sanitize_and_wrap(user_prompt)
 
-        # 3. Model Inference with RBAC Tool Guardrail
         raw_output, tools = llm_engine.generate(
             guarded_prompt,
             context,
@@ -147,7 +140,6 @@ async def chat(request: ChatRequest):
             model_name=request.model_name
         )
 
-        # 4. Output Guardrail Inspection
         is_safe_output, out_reason, sanitized_output = OutputGuardrail.inspect(raw_output)
         if not is_safe_output:
             METRICS["blocked_requests"] += 1
@@ -189,7 +181,6 @@ async def chat(request: ChatRequest):
             tools_executed=tools
         )
 
-    # Unprotected Mode (Vulnerable - for benchmark baseline / offline red-teaming)
     raw_output, tools = llm_engine.generate(
         user_prompt,
         context,

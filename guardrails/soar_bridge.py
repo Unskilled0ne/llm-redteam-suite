@@ -43,14 +43,12 @@ class SOARBridge:
             "soar_status": "DISPATCHED"
         }
 
-        # 1. Log locally to SIEM audit log
         try:
             with open(AUDIT_LOG_FILE, "a", encoding="utf-8") as f:
                 f.write(json.dumps(payload) + "\n")
         except Exception as e:
             logger.error(f"Failed to append to audit log: {e}")
 
-        # 2. Forward to Aegis-SOAR Webhook endpoint if available
         try:
             import re
             extracted_urls = re.findall(r"https?://[^\s)\]\">]+", user_prompt)

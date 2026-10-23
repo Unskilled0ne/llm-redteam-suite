@@ -14,11 +14,9 @@ SECRET_REGEXES = [
     (re.compile(r"xox[baprs]-[0-9a-zA-Z]{10,}"), "Slack Token detected in output")
 ]
 
-# Exfiltration patterns: Markdown images, HTML images/iframes/scripts
 EXFIL_IMAGE_REGEX = re.compile(r"!\[(.*?)\]\((https?:\/\/[^\s\)]+)\)")
 HTML_EXFIL_REGEX = re.compile(r"<(img|iframe|script)\s+[^>]*src=[\"']?(https?:)?\/\/", re.IGNORECASE)
 
-# PII Patterns (SSN, Credit Cards, IBAN)
 SSN_REGEX = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
 CREDIT_CARD_REGEX = re.compile(r"\b(?:\d{4}[ -]?){3}\d{4}\b")
 IBAN_REGEX = re.compile(r"\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b")
@@ -56,25 +54,20 @@ class OutputGuardrail:
         if not output_text:
             return True, None, ""
 
-        # 1. Check for canary token
         if CANARY_TOKEN in output_text:
             return False, "Critical Leak: Canary token detected in model output", "[BLOCKED: Sensitive token leakage detected]"
 
-        # 2. Check for API keys and cryptographic secrets
         for pattern, desc in SECRET_REGEXES:
             if pattern.search(output_text):
                 return False, f"Critical Leak: {desc}", "[BLOCKED: Secret credentials detected]"
 
-        # 3. Check for verbatim system prompt leaks
         for phrase in SYSTEM_LEAK_PHRASES:
             if phrase in output_text:
                 return False, f"Prompt Leak: Verbatim system rule disclosed ('{phrase[:25]}...')", "[BLOCKED: System prompt disclosure detected]"
 
-        # 4. Check for Markdown and HTML image/script exfiltration attempts (SSRF / Data exfiltration)
         if EXFIL_IMAGE_REGEX.search(output_text) or HTML_EXFIL_REGEX.search(output_text):
             return False, "Data Exfiltration: Markdown external image link detected", "[BLOCKED: Potential unauthorized data exfiltration]"
 
-        # 5. Check for PII: SSNs and Valid Credit Cards
         if SSN_REGEX.search(output_text):
             return False, "PII Disclosure: Social Security Number detected", "[BLOCKED: Sensitive PII detected in output]"
 

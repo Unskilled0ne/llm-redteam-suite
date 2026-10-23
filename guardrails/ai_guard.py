@@ -46,7 +46,6 @@ class AIGuardrail:
         if not user_prompt or not user_prompt.strip():
             return True, None
 
-        # Route to configured AI provider
         if self.provider == "gemini" and self.gemini_key and self.gemini_key != "your_actual_key_here":
             return self._inspect_gemini(user_prompt)
 
@@ -56,7 +55,6 @@ class AIGuardrail:
         if self.provider == "ollama":
             return self._inspect_ollama(user_prompt)
 
-        # Fallback: Local Semantic Intent Classifier
         return self._inspect_local_semantic(user_prompt)
 
     def _inspect_gemini(self, user_prompt: str) -> Tuple[bool, Optional[str]]:
@@ -68,7 +66,6 @@ class AIGuardrail:
             resp = requests.post(url, json=payload, timeout=5.0)
             if resp.status_code == 200:
                 text = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-                # Clean markdown if returned
                 if text.startswith("```"):
                     text = text.split("\n", 1)[1].rsplit("\n", 1)[0]
                 result = json.loads(text)
@@ -129,23 +126,19 @@ class AIGuardrail:
         """
         lower = user_prompt.lower()
 
-        # Semantic Intent Triad 1: Rule nullification verbs + constraint nouns
         nullify_verbs = ["ignore", "disregard", "forget", "bypass", "override", "drop", "cancel", "skip"]
         constraint_nouns = ["rule", "instruction", "prompt", "policy", "guideline", "constraint", "filter", "boundary"]
         if any(v in lower for v in nullify_verbs) and any(c in lower for c in constraint_nouns):
             return False, "Semantic Guard Flagged: Intent to nullify operational boundaries or guidelines"
 
-        # Semantic Intent Triad 2: Extraction verbs + secret targets
         extract_verbs = ["reveal", "repeat", "show", "dump", "print", "display", "leak", "tell me", "what is"]
         secret_targets = ["canary", "system prompt", "internal key", "api key", "secret token", "developer instruction"]
         if any(v in lower for v in extract_verbs) and any(s in lower for s in secret_targets):
             return False, "Semantic Guard Flagged: Intent to extract confidential system instructions or secrets"
 
-        # Semantic Intent Triad 3: Persona adoption / unrestricted authority
         if any(k in lower for k in ["dan mode", "developer mode", "unrestricted mode", "you are now", "pretend you have no rules"]):
             return False, "Semantic Guard Flagged: Intent to hijack agent persona or disable safety alignment"
 
-        # Semantic Intent Triad 4: Destructive database tool coercion
         if any(k in lower for k in ["drop table", "truncate table", "wipe logs", "purge audit"]):
             return False, "Semantic Guard Flagged: Intent to coerce destructive database or administrative action"
 
