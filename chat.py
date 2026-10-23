@@ -12,7 +12,6 @@ import urllib.error
 SERVER_URL = "http://127.0.0.1:8000/chat"
 HEALTH_URL = "http://127.0.0.1:8000/health"
 
-# ANSI Color codes for clean output
 CYAN = "\033[96m"
 GREEN = "\033[92m"
 RED = "\033[91m"
